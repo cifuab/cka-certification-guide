@@ -26,8 +26,18 @@ A: The service selector doesn't match the pod labels. Run `kubectl describe svc 
 | Pod `Pending` | No schedulable node | Check taints, affinity, resources |
 | Service no endpoints | Label selector mismatch | Fix `spec.selector` in service |
 | DNS not resolving | CoreDNS down | `kubectl get pods -n kube-system -l k8s-app=kube-dns` |
-| PVC `Pending` | No matching PV or StorageClass | `kubectl describe pvc` → check StorageClass |
+| PVC `Pending` | No matching PV or StorageClass (*) | `kubectl describe pvc` → check StorageClass |
 | Scheduler not running | Bad static pod manifest | Fix `/etc/kubernetes/manifests/kube-scheduler.yaml` |
+
+(*) From a recent test, there is a scenario where the `PVC` will be temporarily in `Pending` mode:
+
+- there is a `StorageClass` with `volumeBindingMode: WaitForFirstConsumer` and a `PV` already created
+
+- you have to create a `PVC` which must bind the existing `PV` and then a `Deployment` that uses the `PVC`.
+
+- when you create the `PVC`, this will stay in `Pending` mode until you create the `Deployment` that will consume the `PVC`
+
+- the fact that the `PVC` does not bind the `PV` immediately is not per se a problem (unless you have done something wrong).
 
 ---
 
